@@ -106,7 +106,9 @@ Number of days of warning before password expires       : 7
 ```
 
 ### Public/Private Keys for Authentication
-Using encrypted keys for authentication offers two main benefits. Firstly, it is convenient as you no longer need to enter a password if you use public/private keys. Secondly, once public/private key pair authentication has been set up on the server, you can disable password authentication completely meaning that without an authorized key you can't gain access.
+Public Key Encryption let clients and server to trust each other without exchanging any key. A private key is installed on the server and a public key is shared between clients. The private key has to be kept secured, the public key can be freely distributed among clients. And the two keys are mathematically keyed to one another. The public key has to be authorized to the server, so any client would be connect, has to have the authorized public key.
+
+Using encrypted keys for authentication offers other two main benefits. Firstly, it is convenient as you no longer need to enter a password if you use public/private keys. Secondly, once public/private key pair authentication has been set up on the server, you can disable password authentication completely meaning that without an authorized key you can't gain access.
 
 Create a private key for client and a public key for server to do it
 ```
@@ -134,7 +136,6 @@ This will create two files in your hidden ssh directory called: ``id_rsa`` and `
 # cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
 # rm -rf ~/.ssh/id_rsa.pub
 ```
-Please, note that the same public key can be installed to many servers, just copy it on that server and install to the authorized keys list.
 
 Copy the private key on the client that you will use to connect to the server and then remove it from the server
 ```
