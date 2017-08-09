@@ -363,9 +363,12 @@ Move both the new key and certificate to the location where the server is expect
 
 Restart the server and access it via curl command
 
-    curl --cacert ca.pem https://centos
-     It Works!
+     curl --cacert ca.pem https://centos
+      It Works!
 
      curl --cacert ca.pem https://10.10.10.1
+      It Works!
+      
+     curl --cacert ca.pem https://localhost
       It Works!
       
