@@ -1,4 +1,4 @@
-## Linux basic security
+## Linux security
 By default, Linux has several account types in order to isolate processes and workloads:
 
 1. **root**
@@ -105,7 +105,7 @@ Maximum number of days between password change          : 99999
 Number of days of warning before password expires       : 7
 ```
 
-### Public/Private Keys for Authentication
+## Public/Private keys authentication
 Public Key Encryption let clients and server to trust each other without exchanging any key. A private key is installed on the server and a public key is shared between clients. The private key has to be kept secured, the public key can be freely distributed among clients. And the two keys are mathematically keyed to one another. The public key has to be authorized to the server, so any client would be connect, has to have the authorized public key.
 
 Using encrypted keys for authentication offers other two main benefits. Firstly, it is convenient as you no longer need to enter a password if you use public/private keys. Secondly, once public/private key pair authentication has been set up on the server, you can disable password authentication completely meaning that without an authorized key you can't gain access.
@@ -143,9 +143,229 @@ Copy the private key on the client that you will use to connect to the server an
 # rm -rf ~/.ssh/id_rsa
 ```
 
-On Linux and Unix client, use the private key to login to the server
+Use the private key to login to the server
 ```
 # ssh -i ~/.ssh/id_rsa root@servermachine
 ```
 
-On Windows client, use the puttygen tool to make the key in a suitable format and use the Putty application to login to the server. Please, note that each user that want to login must have his own key pair.
+Please, note that each user that want to login must have his own key pair.
+
+
+## SSL/TLS Security
+**Transport Layer Secirity**, or **TLS**, and its predecessor **Secure Sockets Layer**, or **SSL**, are protocols used to wrap normal traffic in a protected, encrypted wrapper. Using this technology, http servers can send traffic safely between the server and the client without the concern that the messages will be intercepted and read by an outside party. The certificate system also assists users in verifying the identity of the sites that they are connecting with.
+
+In this section, we will set up a self-signed SSL certificate for use with an Apache web server. A self-signed certificate will encrypt communication between server and any clients. However, because it is not signed by any of the trusted certificate authorities by web browsers, users cannot use the certificate to validate the identity of your server and their browsers will prompt for a securty risk.
+
+A self-signed certificate is more appropriate when you do not have a domain name associated with server and/or the server provides APIs interfaces to any other service.
+
+Install the SSL on the CentOS machine
+
+    yum install -y openssl
+    
+    openssl version
+    OpenSSL 1.0.1e-fips 11 Feb 2013
+
+    mkdir -p ./tls
+    cd tls
+
+### Create Certification Authority certificate and key
+Create a CA key file ``ca-key.pem`` with an encrypted passphrase
+
+    openssl genrsa -aes256 -out ca-key.pem 4096
+    
+    Generating RSA private key, 4096 bit long modulus
+    .....++
+    ........++
+    e is 65537 (0x10001)
+    Enter pass phrase for ca-key.pem:
+    Verifying - Enter pass phrase for ca-key.pem:
+
+This file just created, is the key used in the process to sign the server certificates against the Certification Authority. It is NOT the private key used in the client/server communication. We'll create this key later.
+
+To inspect the key
+
+    openssl rsa -in ca-key.pem -text
+
+If you are interested in to extract the public part from this key, use the command
+
+    openssl rsa -in ca-key.pem -pubout
+
+Now create the CA certificate ca.pem file using the key above
+
+    openssl req -new -x509 -days 3650 -key ca-key.pem -sha256 -out ca.pem
+    ...
+    -----
+    Country Name (2 letter code) [XX]:IT
+    State or Province Name (full name) []:Italy
+    Locality Name (eg, city) [Default City]:Milan
+    Organization Name (eg, company) [Default Company Ltd]:My Own Certification Authority
+    Organizational Unit Name (eg, section) []:
+    Common Name (eg, your name or your server's hostname) []:
+    Email Address []:
+
+This is an interactive process, asking for information about the Certificate Authority. Since we're creating our own Certification Authority, no too much constraints here.
+
+Inspect the certificate
+
+    openssl x509 -in ca.pem -noout -text
+    Certificate:
+        Data:
+            Version: 3 (0x2)
+            Serial Number: 15423805392213301438 (0xd60c5d490fa0d8be)
+        Signature Algorithm: sha256WithRSAEncryption
+            Issuer: C=IT, ST=Italy, L=Milan, O=My Own Certification Authority
+            Validity
+                Not Before: Aug  9 09:29:01 2017 GMT
+                Not After : Aug  7 09:29:01 2027 GMT
+            Subject: C=IT, ST=Italy, L=Milan, O=My Own Certification Authority
+            Subject Public Key Info:
+                Public Key Algorithm: rsaEncryption
+                    Public-Key: (4096 bit)
+
+As convenience, we set the validity of this certificate as for 10 years.
+
+### Create certificate and key for the server
+Create the private key ``server-key.pem`` file for our web server
+
+    openssl genrsa -out server-key.pem 4096
+
+    Generating RSA private key, 4096 bit long modulus
+    ....................++
+    ..++
+    e is 65537 (0x10001)
+
+Please note, we are not using a passphrase for the server key. 
+
+Once we have the private key ``server-key.pem``, we can proceed to create a **Certificate Signing Request**, or **CSR** as ``server.csr`` file. This is a formal request asking the Certification Authority to sign the server certificate. The request needs the private key ``server-key.pem`` of the requesting entity and some information about the entity.
+
+Create the request
+
+    HOST=centos
+    openssl req -subj "/CN=$HOST" -sha256 -new -key server-key.pem -out server.csr
+
+Make sure that Common Name (**CN**) matches the hostname of the server.
+
+Once we created the certificate signing request, we can issue the request against the Certification Authority
+
+    openssl x509 -req -days 3650 -sha256 -in server.csr \
+                 -CA ca.pem \
+                 -CAkey ca-key.pem \
+                 -CAcreateserial -out server-cert.pem
+
+This will produce the ``server-cert.pem`` certificate file containing the public key. Together with the ``server-key.pem`` file, this makes up a server's keys pair.
+
+Move the server's keys pair to a given location where the web server is able to access
+
+    mv server-cert.pem /etc/httpd/ssl/server-cert.pem
+    mv server-key.pem /etc/httpd/ssl/server-key.pem
+
+We'll instruct the http server to use these files. To improve secutity, make sure the private key file will be safe, e.g. changing the file permissions.
+
+    chmod 400 /etc/httpd/ssl/*
+
+### Configure the web server for TLS/SSL
+Install the web server with TLS/SSL support, e.g. apache, and configure it to serve on port 443.
+
+    yum -y install httpd
+    yum -y install mod_ssl
+    
+Edit the ``/etc/httpd/conf.d/ssl.conf`` configuration file at default virtual host section
+
+    <VirtualHost _default_:443>
+        DocumentRoot "/var/www/html"
+        ServerName centos:443
+        ...
+        SSLCertificateFile /etc/httpd/ssl/server-cert.pem
+        SSLCertificateKeyFile /etc/httpd/ssl/server-key.pem
+    </VirtualHost>
+
+Make sure the certificate and key location are the same where we them moved before.
+
+Restart the web server
+
+    systemctl start httpd
+    
+To check the server is serving on secure port, point the browser on https://centos:443 or use the curl tool
+
+    curl --cacert ca.pem https://centos
+    It Works!
+
+If we try to use the IP address instead of the server name
+
+    curl --cacert ca.pem https://10.10.10.1
+    curl: (51) Unable to communicate securely with peer:
+               requested domain name does not match the server's certificate.
+
+We get a TLS rror since the requested domain in the http request, is different than the name, i.e. ``centos`` we set in the Common Name field certificate. 
+
+    openssl x509 -in server-cert.pem -noout -text
+
+    Certificate:
+        Data:
+            Version: 1 (0x0)
+            Serial Number: 12933182947807180877 (0xb37be55e3b2fb84d)
+        Signature Algorithm: sha256WithRSAEncryption
+            Issuer: C=IT, ST=Italy, L=Milan, O=My Own Certification Authority
+            Validity
+                Not Before: Aug  9 09:56:28 2017 GMT
+                Not After : Aug  7 09:56:28 2027 GMT
+            Subject: CN=centos
+            Subject Public Key Info:
+                Public Key Algorithm: rsaEncryption
+                    Public-Key: (4096 bit)
+
+
+This is a common issue with TLS certificates, especially when running services that expose different hostnames. In the next section, we'll create a certificate for multiple hostnames.
+
+### Creating Certificates for multiple hostnames
+By default, certificates have only one Common Name (**CN**) and are valid for only one hostname. Because of this, having a service with multiple hostnames or IP adresses, we are forced to use a separate certificate for each of them. In this situation, using a single multidomain certificate makes much more sense. For this example, create an estention file ``mysite.cnf`` with the following content
+
+    [names]
+    subjectAltName = DNS.0:localhost, IP.0:127.0.0.1, DNS.1:centos, IP.1:10.10.10.1
+
+Now sign the certificate again by including the estention file
+
+    openssl x509 -req -days 3650 -sha256 -in server.csr \
+                 -CA ca.pem \
+                 -CAkey ca-key.pem \
+                 -CAcreateserial -out server-cert.pem \
+                 -extfile "site.cnf" -extensions names
+
+When a certificate contains alternative names, the Common Name set in the request (.csr) is ignored. For this reason, include all desired hostnames on the alternative names configuration file.
+
+Now inspect the new server certificate
+```
+openssl x509 -in server-cert.pem -noout -text
+
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number: 12933182947807180878 (0xb37be55e3b2fb84e)
+    Signature Algorithm: sha256WithRSAEncryption
+        Issuer: C=IT, ST=Italy, L=Milan, O=My Own Certification Authority
+        Validity
+            Not Before: Aug  9 10:32:19 2017 GMT
+            Not After : Aug  7 10:32:19 2027 GMT
+        Subject: CN=centos
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                Public-Key: (4096 bit)
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name:
+                DNS:localhost, IP Address:127.0.0.1,
+                DNS:centos, IP Address:10.10.10.1
+    Signature Algorithm: sha256WithRSAEncryption
+    ...
+```
+
+Move both the new key and certificate to the location where the server is expecting.
+
+Restart the server and access it via curl command
+
+    curl --cacert ca.pem https://centos
+     It Works!
+
+     curl --cacert ca.pem https://10.10.10.1
+      It Works!
+      
