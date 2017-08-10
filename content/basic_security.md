@@ -250,13 +250,13 @@ Once we created the certificate signing request, we can issue the request agains
     openssl x509 -req -days 3650 -sha256 -in server.csr \
                  -CA ca.pem \
                  -CAkey ca-key.pem \
-                 -CAcreateserial -out server-cert.pem
+                 -CAcreateserial -out server.pem
 
-This will produce the ``server-cert.pem`` certificate file containing the public key. Together with the ``server-key.pem`` file, this makes up a server's keys pair.
+This will produce the ``server.pem`` certificate file containing the public key. Together with the ``server-key.pem`` file, this makes up a server's keys pair.
 
 Move the server's keys pair to a given location where the web server is able to access
 
-    mv server-cert.pem /etc/httpd/ssl/server-cert.pem
+    mv server-cert.pem /etc/httpd/ssl/server.pem
     mv server-key.pem /etc/httpd/ssl/server-key.pem
 
 We'll instruct the http server to use these files. To improve secutity, make sure the private key file will be safe, e.g. changing the file permissions.
@@ -275,7 +275,7 @@ Edit the ``/etc/httpd/conf.d/ssl.conf`` configuration file at default virtual ho
         DocumentRoot "/var/www/html"
         ServerName centos:443
         ...
-        SSLCertificateFile /etc/httpd/ssl/server-cert.pem
+        SSLCertificateFile /etc/httpd/ssl/server.pem
         SSLCertificateKeyFile /etc/httpd/ssl/server-key.pem
     </VirtualHost>
 
@@ -328,14 +328,14 @@ Now sign the certificate again by including the estention file
     openssl x509 -req -days 3650 -sha256 -in server.csr \
                  -CA ca.pem \
                  -CAkey ca-key.pem \
-                 -CAcreateserial -out server-cert.pem \
+                 -CAcreateserial -out server.pem \
                  -extfile "site.cnf" -extensions names
 
 When a certificate contains alternative names, the Common Name set in the request (.csr) is ignored. For this reason, include all desired hostnames on the alternative names configuration file.
 
 Now inspect the new server certificate
 ```
-openssl x509 -in server-cert.pem -noout -text
+openssl x509 -in server.pem -noout -text
 
 Certificate:
     Data:
@@ -359,7 +359,7 @@ Certificate:
     ...
 ```
 
-Move both the new key and certificate to the location where the server is expecting.
+Move both the new key and certificate to the location where the server is expecting them.
 
 Restart the server and access it via curl command
 
@@ -373,7 +373,101 @@ Restart the server and access it via curl command
       It Works!
       
 ## The CloudFlare TLS toolkit
-In this section, we are going to use the CloudFlare TLS toolkit for helping in TLS certificate creation. Details on on this tool are [here](https://github.com/cloudflare/cfssl).
+In this section, we are going to use the **CloudFlare** TLS toolkit for helping in TLS certificate creation. Details on this tool are [here](https://github.com/cloudflare/cfssl).
+
+Install the tool
+
+        wget https://pkg.cfssl.org/R1.2/cfssl_linux-amd64
+        wget https://pkg.cfssl.org/R1.2/cfssljson_linux-amd64
+
+        chmod +x cfssl_linux-amd64
+        chmod +x cfssljson_linux-amd64
+
+        mv cfssl_linux-amd64 /usr/local/bin/cfssl
+        mv cfssljson_linux-amd64 /usr/local/bin/cfssljson
+
+Create a Certification Authority configuration file ``ca-config.json`` as following
+
+```json
+{
+  "signing": {
+    "default": {
+      "expiry": "8760h"
+    },
+    "profiles": {
+      "custom": {
+        "usages": ["signing", "key encipherment", "server auth", "client auth"],
+        "expiry": "8760h"
+      }
+    }
+  }
+}
+```
+
+Create the configuration file ``ca-csr.json`` for the Certification Authority signing request
+
+```json
+{
+  "CN": "NoverIT",
+  "key": {
+    "algo": "rsa",
+    "size": 4096
+  },
+  "names": [
+    {
+      "C": "IT",
+      "ST": "Italy",
+      "L": "Milan",
+      "O": "My Own Certification Authority"
+    }
+  ]
+}
+```
+
+Generate a CA certificate and private key:
+
+    cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+
+As sesult, we have following files
+
+    ca-key.pem
+    ca.pem
+
+They are the key and the certificate of our self signed Certification Authority.
+
+### Create certificate and key for the server
+Create the configuration file ``server-csr.json`` for server certificate signing request
+
+```json
+{
+  "CN": "docker-engine",
+  "hosts": [
+    "centos",
+    "10.10.10.1",
+    "127.0.0.1",
+    "localhost"
+  ],
+  "key": {
+    "algo": "rsa",
+    "size": 4096
+  }
+}
+```
+
+Create the key pair
+
+cfssl gencert \
+   -ca=ca.pem \
+   -ca-key=ca-key.pem \
+   -config=ca-config.json \
+   -profile=custom \
+   server-csr.json | cfssljson -bare server
+
+This will produce the ``server.pem`` certificate file containing the public key and the ``server-key.pem`` file, containing the private key. Move the server's keys pair to a given location where the http server is expecting them.
+
+Restart the https server.
+
+
 
 
 
