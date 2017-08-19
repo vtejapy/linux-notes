@@ -14,7 +14,11 @@ Filename                                Type            Size    Used    Priority
 /dev/dm-0                               partition       4079612 0       -1
 ```
 
-Ogni riga elenca una partizione di swap separata utilizzata dal sistema. Una particolarità dello swap su linux è che, se montare due (o più) spazi di swap (preferibilmente su due dispositivi differenti) con la stessa priorità, linux divide le sue attività di swapping tra di loro. Questo si traduce in un incremento notevole delle prestazioni. Per aggiungere una partizione di swap per il vostro sistema, è necessario però prima di prepararla.
+Ogni riga elenca una partizione di swap separata utilizzata dal sistema. Una particolarità dello swap su linux è che, se montare due (o più) spazi di swap (preferibilmente su due dispositivi differenti) con la stessa priorità, linux divide le sue attività di swapping tra di loro. Questo si traduce in un incremento notevole delle prestazioni.
+
+### Swap dimensioning
+
+![](../img/swap.jpg?raw=true)
 
 ### Add a swap area as a file
 ```
