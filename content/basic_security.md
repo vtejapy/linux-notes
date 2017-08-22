@@ -456,12 +456,12 @@ Create the configuration file ``server-csr.json`` for server certificate signing
 
 Create the key pair
 
-cfssl gencert \
-   -ca=ca.pem \
-   -ca-key=ca-key.pem \
-   -config=ca-config.json \
-   -profile=custom \
-   server-csr.json | cfssljson -bare server
+    cfssl gencert \
+       -ca=ca.pem \
+       -ca-key=ca-key.pem \
+       -config=ca-config.json \
+       -profile=custom \
+       server-csr.json | cfssljson -bare server
 
 This will produce the ``server.pem`` certificate file containing the public key and the ``server-key.pem`` file, containing the private key. Move the server's keys pair to a given location where the http server is expecting them.
 
