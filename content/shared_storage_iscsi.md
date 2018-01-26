@@ -192,7 +192,7 @@ iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal c
 Stop and then disable the services at startup, if required
 ```
 systemctl stop iscsid iscsi
-systemctl disnable iscsid iscsi
+systemctl disable iscsid iscsi
 ```
 
 
