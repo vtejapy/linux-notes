@@ -27,7 +27,7 @@ Created block storage object block_backend using /dev/sdc.
 Create an iSCSI target using a specified name
 ```
 /> iscsi/ create iqn.2017-10.com.noverit.centos:3260
-Created target iqn.2015-05.com.noverit.caldara02:3260.
+Created target iqn.2015-05.com.noverit.centos:3260.
 Created TPG 1.
 Global pref auto_add_default_portal=true
 Created default portal listening on all IPs (0.0.0.0), port 3260
@@ -164,7 +164,7 @@ iscsiadm -m node -o show
 
 Login to the target
 ```
-iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal caldara02:3260 --login
+iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal centos:3260 --login
 ```
 
 Check the storage block devices on the initiator machine
@@ -186,7 +186,7 @@ The disk ``/dev/sdc`` is the remote iSCSI block device exported by the target. I
 
 To disconnect the remote devices
 ```
-iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal caldara02:3260  --logout
+iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal centos:3260  --logout
 ```
 
 Stop and then disable the services at startup, if required
