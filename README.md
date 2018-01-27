@@ -1,5 +1,5 @@
-## Linux Tutorial
-This tutorial is about Linux knowledge. It is intended for personal use only.
+## Linux Notes
+This block note is about my Linux knowledge. It is intended for personal use only.
 
 ### Summary
 1. [Basic Commands](./content/basic_commands.md)
