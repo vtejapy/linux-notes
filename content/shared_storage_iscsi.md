@@ -369,4 +369,4 @@ However, the iSCSI disk is still there
     cat /mnt/date.log
     Sat Jan 27 18:51:06 CET 2018
 
-This demonstrate the usage of multipath in iSCSI.
+This demonstrate a simple usage of multipath in iSCSI.
