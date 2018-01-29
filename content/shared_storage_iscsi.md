@@ -184,11 +184,11 @@ If the discovery found more iSCSI targets, issue the following command to login 
     
 To display all active sessions in compact way
 
-    iscsiadm -m session -P 0
+    iscsiadm -m session
     
 or with more details
 
-    iscsiadm -m session -P 1
+    iscsiadm -m session -P 3
 
 To logout from all the targets, use the command
 
