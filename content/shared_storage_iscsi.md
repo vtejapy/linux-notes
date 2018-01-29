@@ -174,15 +174,21 @@ sdc                         8:32   0    20G  0 disk
 ```
 The disk ``/dev/sdc`` is the remote iSCSI block device exported by the target. It is seen as local block device in the initiator machine. The disk can be used as with standard local disk commands and configurations, including ``fdisk``, ``mkfs``, ``e2label``, etc.
 
-
 To disconnect the remote devices
 
     iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal centos:3260  --logout
 
-
 If the discovery found more iSCSI targets, issue the following command to login all targets
 
     iscsiadm -m node -l
+    
+To display all active sessions in compact way
+
+    iscsiadm -m session -P 0
+    
+or with more details
+
+    iscsiadm -m session -P 1
 
 To logout from all the targets, use the command
 
