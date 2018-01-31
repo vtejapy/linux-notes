@@ -178,22 +178,6 @@ To disconnect the remote devices
 
     iscsiadm --mode node --targetname iqn.2017-10.com.noverit.centos:3260 --portal centos:3260  --logout
 
-If the discovery found more iSCSI targets, issue the following command to login all targets
-
-    iscsiadm -m node -l
-    
-To display all active sessions in compact way
-
-    iscsiadm -m session
-    
-or with more details
-
-    iscsiadm -m session -P 3
-
-To logout from all the targets, use the command
-
-    iscsiadm -m node -u
-
 Stop and then disable the services at startup, if required
 ```
 systemctl stop iscsid iscsi
@@ -376,3 +360,58 @@ However, the iSCSI disk is still there
     Sat Jan 27 18:51:06 CET 2018
 
 This demonstrate a simple usage of multipath in iSCSI.
+
+## Open iSCSI administrative commands
+The ``iscsiadm`` utility allows access and management of the iSCSI database on Linux. Following the most useful options.
+
+View available portals
+
+    iscsiadm -m discovery -o show
+
+Discover available targets from a portal
+
+    iscsiadm -m discovery -t sendtargets -p ipaddress:port
+
+List targets to login
+
+    iscsiadm -m node -o show
+
+Log into a specific target
+
+    iscsiadm -m node -T targetname -p ipaddress:port -l
+
+Login into all targets
+
+    iscsiadm -m node -l
+    
+Log out of a specific target
+
+    iscsiadm -m node -T targetname -p ipaddress:port -u
+
+Display information about a target
+
+    iscsiadm -m node -T targetname -p ipaddress:port
+
+Display statistics about a target
+
+    iscsiadm -m node -s -T targetname -p ipaddress:port
+
+Logout from all the targets
+
+    iscsiadm -m node -u
+
+To display all active sessions logged into
+
+    iscsiadm -m session
+    
+or with more details
+
+    iscsiadm -m session -P 0|1|3
+
+
+
+
+
+
+
+
