@@ -408,7 +408,7 @@ or with more details
 
     iscsiadm -m session -P 0|1|3
 
-
+In case of trouble, check the content of ``/var/lib/iscsi/``.
 
 
 
