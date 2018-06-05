@@ -46,6 +46,7 @@ On the client machine mount the shared folder to a local folder
 
 Some more important commands for NFS.
 
+```
 showmount -e : Shows the available shares on your local machine
 showmount -e <server-ip or hostname>: Lists the available shares at the remote server
 showmount -d : Lists all the sub directories
@@ -53,3 +54,4 @@ exportfs -v : Displays a list of shares files and options on a server
 exportfs -a : Exports all shares listed in /etc/exports, or given name
 exportfs -u : Unexports all shares listed in /etc/exports, or given name
 exportfs -r : Refresh the server’s list after modifying /etc/exports
+```
